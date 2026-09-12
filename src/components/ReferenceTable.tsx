@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArticleAnalysis, BilingualText } from "../types";
-import { Table, Search, ExternalLink, Download, AlertCircle } from "lucide-react";
+import { Table, Search, ExternalLink, Download, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
 import Papa from "papaparse";
 
@@ -11,6 +11,12 @@ interface ReferenceTableProps {
 export function ReferenceTable({ articles }: ReferenceTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [lang, setLang] = useState<'bm' | 'en'>('bm');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const renderText = (text: BilingualText | string | undefined) => {
     if (!text) return "";
@@ -21,6 +27,12 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
   const filteredArticles = articles.filter(article => 
     article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     article.authors.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
+  const currentItems = filteredArticles.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleExportCSV = () => {
@@ -57,15 +69,17 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50/50">
-      <div className="p-6 border-b border-gray-200 bg-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-7xl mx-auto w-full">
+      <div className="p-6 border-b border-gray-200 bg-white shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <Table className="w-5 h-5 text-blue-600" />
               {lang === 'bm' ? 'Jadual Rujukan (Matriks SLR)' : 'Reference Table (SLR Matrix)'}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {lang === 'bm' ? 'Ringkasan keseluruhan artikel yang telah dimuat naik' : 'Overview of all uploaded articles'}
+              {lang === 'bm' 
+                ? 'Ringkasan keseluruhan artikel yang telah dimuat naik. Skrol jadual ke kanan atau ke bawah untuk paparan penuh.' 
+                : 'Overview of all uploaded articles. Scroll table right or down for full view.'}
             </p>
           </div>
 
@@ -124,41 +138,43 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto w-full">
+      <div className="flex-1 overflow-hidden p-6 flex flex-col">
+        <div className="w-full h-full flex flex-col">
           {filteredArticles.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm max-w-7xl mx-auto w-full">
               <Table className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-sm">
                 {lang === 'bm' ? 'Tiada rekod rujukan dijumpai. Sila muat naik fail di tab Pengurusan Rujukan.' : 'No references found. Please upload files in the Reference Management tab.'}
               </p>
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden h-full">
+              <div className="overflow-auto flex-1">
+                <table className="w-full text-left border-collapse relative">
+                  <thead className="sticky top-0 z-30 shadow-sm">
                     <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      <th className="p-4 w-12 text-center">#</th>
-                      <th className="p-4 min-w-[200px] border-r border-gray-200">Kawalan (Control)</th>
-                      <th className="p-4 min-w-[200px]">Author / Year</th>
-                      <th className="p-4 min-w-[250px] bg-blue-50 text-blue-800">Title</th>
-                      <th className="p-4 min-w-[200px] bg-emerald-50 text-emerald-800">Background</th>
-                      <th className="p-4 min-w-[200px] bg-amber-50 text-amber-800">Problem Statement</th>
-                      <th className="p-4 min-w-[200px] bg-orange-50 text-orange-800">Methodology</th>
-                      <th className="p-4 min-w-[200px] bg-teal-50 text-teal-800">Finding</th>
-                      <th className="p-4 min-w-[200px] bg-purple-50 text-purple-800">Future Research</th>
-                      <th className="p-4 min-w-[200px] bg-indigo-50 text-indigo-800">Gap</th>
-                      <th className="p-4 min-w-[200px] bg-sky-50 text-sky-800">Justify to Your Research</th>
+                      <th className="p-4 w-12 text-center sticky left-0 z-40 bg-gray-100 border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">#</th>
+                      <th className="p-4 min-w-[150px] sticky left-[48px] z-40 bg-gray-50 border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Kawalan (Control)</th>
+                      <th className="p-4 min-w-[150px] bg-gray-50">Author / Year</th>
+                      <th className="p-4 min-w-[300px] bg-blue-50 text-blue-800">Title</th>
+                      <th className="p-4 min-w-[300px] bg-emerald-50 text-emerald-800">Background</th>
+                      <th className="p-4 min-w-[300px] bg-amber-50 text-amber-800">Problem Statement</th>
+                      <th className="p-4 min-w-[300px] bg-orange-50 text-orange-800">Methodology</th>
+                      <th className="p-4 min-w-[300px] bg-teal-50 text-teal-800">Finding</th>
+                      <th className="p-4 min-w-[300px] bg-purple-50 text-purple-800">Future Research</th>
+                      <th className="p-4 min-w-[300px] bg-indigo-50 text-indigo-800">Gap</th>
+                      <th className="p-4 min-w-[300px] bg-sky-50 text-sky-800">Justify to Your Research</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredArticles.map((article, index) => (
-                      <tr key={article.id} className="hover:bg-gray-50/50 transition-colors group">
-                        <td className="p-4 text-center text-sm font-bold text-gray-700 align-top bg-gray-50/50">
-                          {index + 1}
+                    {currentItems.map((article, index) => {
+                      const absoluteIndex = (currentPage - 1) * itemsPerPage + index + 1;
+                      return (
+                      <tr key={article.id} className="hover:bg-blue-50/30 transition-colors group">
+                        <td className="p-4 text-center text-sm font-bold text-gray-700 align-top sticky left-0 z-20 bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 group-hover:bg-blue-50/90 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                          {absoluteIndex}
                         </td>
-                        <td className="p-4 align-top border-r border-gray-100 bg-gray-50/20">
+                        <td className="p-4 align-top sticky left-[48px] z-20 bg-white/95 backdrop-blur-sm border-r border-gray-200 group-hover:bg-blue-50/90 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                           <div className="space-y-2">
                             <div>
                               <span className="text-[10px] font-bold text-gray-500 uppercase">Priority</span>
@@ -180,16 +196,16 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
                             </div>
                           </div>
                         </td>
-                        <td className="p-4 align-top">
+                        <td className="p-4 align-top bg-white group-hover:bg-transparent">
                           <p className="text-sm font-bold text-gray-900 mb-1">{article.authors}</p>
                           <p className="text-xs text-gray-600 font-semibold">({article.year})</p>
                         </td>
-                        <td className="p-4 align-top">
-                          <p className="text-sm text-gray-900 font-medium mb-1">{article.title}</p>
+                        <td className="p-4 align-top bg-white group-hover:bg-transparent">
+                          <p className="text-sm text-gray-900 font-medium mb-1 leading-relaxed">{article.title}</p>
                           {article.needsReevaluation && (
                             <div className="mt-2 mb-2 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] p-2 rounded flex items-start gap-1">
                                <AlertCircle className="w-3 h-3 mt-0.5 shrink-0 text-amber-600" />
-                               <span className="font-semibold leading-tight">Amaran: Kajian pengguna telah diubah. Sila semak semula perkaitan.</span>
+                               <span className="font-semibold leading-tight">Amaran: Kajian pengguna telah diubah. Sila semak semula.</span>
                             </div>
                           )}
                           {article.isPredatory && (
@@ -199,70 +215,111 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
                             </div>
                           )}
                           {article.journal && (
-                            <p className="text-xs text-blue-600 bg-blue-50 inline-block px-2 py-0.5 rounded border border-blue-100 mb-1 mt-2">
+                            <p className="text-xs text-blue-700 bg-blue-50/50 inline-block px-2 py-1 rounded border border-blue-100 mb-1 mt-2 font-medium">
                               {article.journal}
                             </p>
                           )}
                           {article.doi && (
-                            <a href={`https://doi.org/${article.doi}`} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:text-blue-500 flex items-center gap-1 mt-1">
+                            <a href={`https://doi.org/${article.doi}`} target="_blank" rel="noreferrer" className="text-xs text-gray-500 hover:text-blue-600 flex items-center gap-1 mt-2 font-medium transition-colors">
                               DOI <ExternalLink className="w-3 h-3" />
                             </a>
                           )}
                         </td>
-                        <td className="p-4 align-top text-sm text-gray-700">
-                          <ul className="list-disc pl-4 space-y-1">
+                        <td className="p-4 align-top text-sm text-gray-700 bg-white group-hover:bg-transparent">
+                          <ul className="list-disc pl-4 space-y-2">
                             {renderText(article.background).split('. ').filter(Boolean).map((sent, i) => (
-                              <li key={i}>{sent}.</li>
+                              <li key={i} className="leading-relaxed">{sent}.</li>
                             ))}
                           </ul>
                         </td>
-                        <td className="p-4 align-top text-sm text-gray-700">
-                          <ul className="list-disc pl-4 space-y-1">
+                        <td className="p-4 align-top text-sm text-gray-700 bg-white group-hover:bg-transparent">
+                          <ul className="list-disc pl-4 space-y-2">
                             {renderText(article.problemStatement).split('. ').filter(Boolean).map((sent, i) => (
-                              <li key={i}>{sent}.</li>
+                              <li key={i} className="leading-relaxed">{sent}.</li>
                             ))}
                           </ul>
                         </td>
-                        <td className="p-4 align-top text-sm text-gray-700">
-                          <ul className="list-disc pl-4 space-y-1">
+                        <td className="p-4 align-top text-sm text-gray-700 bg-white group-hover:bg-transparent">
+                          <ul className="list-disc pl-4 space-y-2">
                             {renderText(article.methodology).split('. ').filter(Boolean).map((sent, i) => (
-                              <li key={i}>{sent}.</li>
+                              <li key={i} className="leading-relaxed">{sent}.</li>
                             ))}
                           </ul>
                         </td>
-                        <td className="p-4 align-top text-sm text-gray-700">
-                          <ul className="list-disc pl-4 space-y-1">
+                        <td className="p-4 align-top text-sm text-gray-700 bg-white group-hover:bg-transparent">
+                          <ul className="list-disc pl-4 space-y-2">
                             {renderText(article.findings).split('. ').filter(Boolean).map((sent, i) => (
-                              <li key={i}>{sent}.</li>
+                              <li key={i} className="leading-relaxed">{sent}.</li>
                             ))}
                           </ul>
                         </td>
-                        <td className="p-4 align-top text-sm text-gray-700">
-                          <ul className="list-disc pl-4 space-y-1">
+                        <td className="p-4 align-top text-sm text-gray-700 bg-white group-hover:bg-transparent">
+                          <ul className="list-disc pl-4 space-y-2">
                             {renderText(article.futureResearch).split('. ').filter(Boolean).map((sent, i) => (
-                              <li key={i}>{sent}.</li>
+                              <li key={i} className="leading-relaxed">{sent}.</li>
                             ))}
                           </ul>
                         </td>
-                        <td className="p-4 align-top text-sm text-gray-700">
-                          <ul className="list-disc pl-4 space-y-1">
+                        <td className="p-4 align-top text-sm text-gray-700 bg-white group-hover:bg-transparent">
+                          <ul className="list-disc pl-4 space-y-2">
                             {renderText(article.researchGap).split('. ').filter(Boolean).map((sent, i) => (
-                              <li key={i}>{sent}.</li>
+                              <li key={i} className="leading-relaxed">{sent}.</li>
                             ))}
                           </ul>
                         </td>
-                        <td className="p-4 align-top text-sm text-gray-700">
-                          <ul className="list-disc pl-4 space-y-1">
+                        <td className="p-4 align-top text-sm text-gray-700 bg-white group-hover:bg-transparent">
+                          <ul className="list-disc pl-4 space-y-2">
                             {renderText(article.slrRelevance).split('. ').filter(Boolean).map((sent, i) => (
-                              <li key={i}>{sent}.</li>
+                              <li key={i} className="leading-relaxed">{sent}.</li>
                             ))}
                           </ul>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex items-center justify-between shrink-0">
+                  <p className="text-sm text-gray-600">
+                    Menunjukkan <span className="font-semibold text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> hingga <span className="font-semibold text-gray-900">{Math.min(currentPage * itemsPerPage, filteredArticles.length)}</span> daripada <span className="font-semibold text-gray-900">{filteredArticles.length}</span> artikel
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPage(i + 1)}
+                          className={cn(
+                            "w-8 h-8 flex items-center justify-center rounded text-sm font-semibold transition-colors",
+                            currentPage === i + 1 
+                              ? "bg-blue-600 text-white shadow-sm" 
+                              : "text-gray-600 hover:bg-gray-200"
+                          )}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -270,3 +327,4 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
     </div>
   );
 }
+
