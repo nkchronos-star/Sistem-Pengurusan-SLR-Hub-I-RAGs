@@ -100,7 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-3.1-pro-preview",
       contents: [
         {
           role: "user",
