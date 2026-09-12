@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, setDoc, updateDoc, onSnapshot, query } from "firebase/firestore";
 import { db, auth } from "./firebase";
-import { ArticleAnalysis, ResearchProfile } from "../types";
+import { ArticleAnalysis, ResearchProfile, SLRData } from "../types";
 import { onAuthStateChanged } from "firebase/auth";
 
 // Hook or listener for articles
@@ -36,4 +36,20 @@ export const updateArticleInDb = async (userId: string, articleId: string, updat
 export const saveSettingsToDb = async (userId: string, settings: ResearchProfile) => {
   const settingsRef = doc(db, "users", userId, "profile", "settings");
   await setDoc(settingsRef, settings, { merge: true });
+};
+
+export const subscribeToCSVData = (userId: string, callback: (data: SLRData | null) => void) => {
+  const d = doc(db, "users", userId, "profile", "csvData");
+  return onSnapshot(d, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.data() as SLRData);
+    } else {
+      callback(null);
+    }
+  });
+};
+
+export const saveCSVDataToDb = async (userId: string, data: SLRData) => {
+  const dataRef = doc(db, "users", userId, "profile", "csvData");
+  await setDoc(dataRef, data, { merge: true });
 };

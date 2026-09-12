@@ -15,7 +15,7 @@ import { LayoutDashboard, BookOpen, TableProperties, Settings, AlertTriangle } f
 import { cn } from './lib/utils';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, User, signInAnonymously } from 'firebase/auth';
-import { subscribeToArticles, subscribeToSettings, saveSettingsToDb, updateArticleInDb } from './lib/db';
+import { subscribeToArticles, subscribeToSettings, saveSettingsToDb, updateArticleInDb, subscribeToCSVData, saveCSVDataToDb } from './lib/db';
 
 export default function App() {
   const [data, setData] = useState<SLRData | null>(null);
@@ -58,10 +58,16 @@ export default function App() {
           setArticles(fetchedArticles);
         });
 
+        // Subscribe to CSV Data
+        const unsubCSV = subscribeToCSVData(currentUser.uid, (csvData) => {
+          if (csvData) setData(csvData);
+        });
+
         setIsLoading(false);
         return () => {
           unsubSettings();
           unsubArticles();
+          unsubCSV();
         };
       } else {
         setIsLoading(false);
@@ -77,6 +83,9 @@ export default function App() {
     try {
       const parsedData = await parseSLRCSV(file);
       setData(parsedData);
+      if (user) {
+        await saveCSVDataToDb(user.uid, parsedData);
+      }
     } catch (err) {
       console.error(err);
       setError("Gagal memproses fail. Sila pastikan format CSV adalah betul.");
