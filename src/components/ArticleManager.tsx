@@ -5,7 +5,6 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { User } from 'firebase/auth';
 import { saveArticleToDb, updateArticleInDb } from '../lib/db';
-import { GoogleGenAI } from "@google/genai";
 
 interface ArticleManagerProps {
   articles: ArticleAnalysis[];
@@ -44,92 +43,34 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
     setIsUploading(true);
     setError(null);
 
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("title", researchProfile.title);
+    formData.append("keywords", researchProfile.keywords);
     const fileUrl = URL.createObjectURL(file); // Generate URL for the PDF
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
-      if (!apiKey) {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textResponse = await response.text();
+        console.error("Non-JSON response from server:", textResponse);
         throw new Error(lang === 'bm' 
-          ? "VITE_GEMINI_API_KEY tidak dijumpai. Sila tetapkan kunci ini di Environment Variables Vercel/Render anda."
-          : "VITE_GEMINI_API_KEY is missing. Please set this in your Vercel/Render Environment Variables.");
+          ? "Ralat pelayan: Pelayan mungkin sedang dimulakan semula atau mengalami kesesakan. Sila cuba sebentar lagi." 
+          : "Server error: The server might be restarting or overloaded. Please try again in a moment.");
       }
 
-      // Convert file to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const base64String = (reader.result as string).split(',')[1];
-          resolve(base64String);
-        };
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-      });
-      const base64Data = await base64Promise;
-
-      const ai = new GoogleGenAI({ apiKey });
-      
-      const prompt = `Anda adalah seorang penyelidik dan penganalisis akademik bertahap tinggi. Sila baca dokumen yang dilampirkan ini secara mendalam dan berikan analisis berstruktur untuk keperluan Systematic Literature Review (SLR). 
-
-      MAKLUMAT KAJIAN PENGGUNA (SANGAT PENTING):
-      Tajuk Kajian Pengguna: "${researchProfile.title}"
-      Tumpuan (Konstruk/Kata Kunci): "${researchProfile.keywords}"
-      
-      ARAHAN KESELAMATAN (PREDATORY JOURNALS):
-      Semak nama jurnal atau penerbit artikel ini. Jika anda mendapati artikel ini berisiko tinggi diterbitkan dalam jurnal pemangsa (predatory journals) atau penerbit yang diragui (contoh: penerbit yang selalu tersenarai dalam Beall's List tanpa proses peer-review yang sah), anda MESTI menandakan "isPredatory": true dan berikan amaran di bahagian "predatoryWarning". Jika selamat, biarkan false.
-
-      ARAHAN PENILAIAN PRIORITY & REJECT (SANGAT PENTING):
-      Anda MESTI menilai tahap kerelevanan artikel ini dengan "Tumpuan" kajian pengguna di atas.
-      - Jika artikel ini TERANG-TERANGAN TIADA KAITAN langsung (contoh: kajian biologi marin berbanding sejarah), setkan "autoPriority" kepada "REJECT" dan berikan sebab pada "rejectReason".
-      - Jika artikel ini sangat hampir atau tepat dengan konstruk utama kajian pengguna, setkan "autoPriority" kepada "A-TERAS".
-      - Jika artikel ini hanya menyokong sebahagian metodologi, latar belakang, atau konsep umum, setkan "autoPriority" kepada "B-SOKONGAN".
-
-      PENTING: Anda MESTI memberikan analisis dalam DUA bahasa, iaitu Bahasa Melayu (bm) dan Bahasa Inggeris (en).
-      Ekstrak maklumat berikut dan pulangkan DALAM FORMAT JSON SAHAJA seperti struktur ini (JANGAN letak markdown \`\`\`json, hanya pulangkan JSON tulen):
-      {
-        "title": "Tajuk penuh artikel",
-        "authors": "Senarai nama penulis (dipisahkan dengan koma)",
-        "year": "Tahun diterbitkan (contoh: 2023)",
-        "doi": "Nombor DOI artikel jika ada (jika tiada, biarkan kosong)",
-        "journal": "Nama Jurnal atau Persidangan (jika ada, jika tiada biarkan kosong)",
-        "isPredatory": false,
-        "predatoryWarning": "Berikan amaran ringkas mengapa ia disyaki jurnal pemangsa (jika isPredatory true)",
-        "autoPriority": "A-TERAS atau B-SOKONGAN atau REJECT",
-        "rejectReason": "Nyatakan sebab artikel ditolak. Biarkan kosong jika tidak ditolak.",
-        "summary": { "bm": "Ringkasan padat kajian ini (3-4 ayat)", "en": "Concise summary of this study (3-4 sentences)" },
-        "background": { "bm": "Latar belakang kajian (Background) yang ringkas", "en": "Brief background of the study" },
-        "problemStatement": { "bm": "Penyataan masalah (Problem Statement)", "en": "Problem statement of the study" },
-        "methodology": { "bm": "Pendekatan metodologi yang digunakan beserta sampel", "en": "Methodological approach used along with the sample" },
-        "findings": { "bm": "Dapatan utama kajian (Findings)", "en": "Main findings of the study" },
-        "futureResearch": { "bm": "Cadangan kajian akan datang (Future Research)", "en": "Future research recommendations" },
-        "researchGap": { "bm": "Jurang kajian (Research Gap) utama yang cuba diselesaikan", "en": "Main research gap that the authors attempt to address" },
-        "slrRelevance": { "bm": "Bagaimana artikel ini relevan ATAU BOLEH DIGUNAKAN untuk menyokong kajian pengguna.", "en": "How this article is relevant OR CAN BE USED to support the user's research." }
+      if (!response.ok) {
+        throw new Error(data.error || (lang === 'bm' ? "Ralat pelayan" : "Server error"));
       }
-      Pastikan tiada teks lain selain dari objek JSON yang sah.`;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: file.type,
-                  data: base64Data
-                }
-              }
-            ]
-          }
-        ],
-        config: {
-          responseMimeType: "application/json",
-        }
-      });
-
-      let resultText = response.text || "{}";
-      resultText = resultText.replace(/```json/gi, "").replace(/```/g, "").trim();
-      const data = JSON.parse(resultText);
 
       if (data.autoPriority === 'REJECT') {
         throw new Error(`DITOLAK: Artikel ini tiada kaitan dengan fokus kajian. \nSebab: ${data.rejectReason || 'Tidak relevan.'}`);

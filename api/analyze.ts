@@ -46,50 +46,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     MAKLUMAT KAJIAN PENGGUNA (SANGAT PENTING):
     Tajuk Kajian Pengguna: "${userTitle}"
-    Kata Kunci/Fokus: "${userKeywords}"
+    Tumpuan (Konstruk/Kata Kunci): "${userKeywords}"
+    
+    ARAHAN KESELAMATAN (PREDATORY JOURNALS):
+    Semak nama jurnal atau penerbit artikel ini. Jika anda mendapati artikel ini berisiko tinggi diterbitkan dalam jurnal pemangsa (predatory journals) atau penerbit yang diragui (contoh: penerbit yang selalu tersenarai dalam Beall's List tanpa proses peer-review yang sah), anda MESTI menandakan "isPredatory": true dan berikan amaran di bahagian "predatoryWarning". Jika selamat, biarkan false.
 
-    ARAHAN:
-    Nilai sama ada artikel ini relevan dengan kajian pengguna berdasarkan MAKLUMAT KAJIAN PENGGUNA di atas.
+    ARAHAN PENILAIAN PRIORITY & REJECT (SANGAT PENTING):
+    Anda MESTI menilai tahap kerelevanan artikel ini dengan "Tumpuan" kajian pengguna di atas.
+    - Jika artikel ini TERANG-TERANGAN TIADA KAITAN langsung (contoh: kajian biologi marin berbanding sejarah), setkan "autoPriority" kepada "REJECT" dan berikan sebab pada "rejectReason".
+    - Jika artikel ini sangat hampir atau tepat dengan konstruk utama kajian pengguna, setkan "autoPriority" kepada "A-TERAS".
+    - Jika artikel ini hanya menyokong sebahagian metodologi, latar belakang, atau konsep umum, setkan "autoPriority" kepada "B-SOKONGAN".
 
-    Sila ekstrak maklumat berikut HANYA dalam format JSON (tanpa sebarang penerangan tambahan):
+    PENTING: Anda MESTI memberikan analisis dalam DUA bahasa, iaitu Bahasa Melayu (bm) dan Bahasa Inggeris (en).
+    Ekstrak maklumat berikut dan pulangkan DALAM FORMAT JSON SAHAJA seperti struktur ini (JANGAN letak markdown \`\`\`json, hanya pulangkan JSON tulen):
     {
-      "title": "Tajuk sebenar artikel/kajian",
-      "authors": "Senarai nama pengarang",
-      "year": 2023,
+      "title": "Tajuk penuh artikel",
+      "authors": "Senarai nama penulis (dipisahkan dengan koma)",
+      "year": "Tahun diterbitkan (contoh: 2023)",
+      "doi": "Nombor DOI artikel jika ada (jika tiada, biarkan kosong)",
+      "journal": "Nama Jurnal atau Persidangan (jika ada, jika tiada biarkan kosong)",
+      "isPredatory": false,
+      "predatoryWarning": "Berikan amaran ringkas mengapa ia disyaki jurnal pemangsa (jika isPredatory true)",
+      "autoPriority": "A-TERAS atau B-SOKONGAN atau REJECT",
+      "rejectReason": "Nyatakan sebab artikel ditolak. Biarkan kosong jika tidak ditolak.",
       "summary": {
-        "bm": "Rumusan ringkas tentang artikel (max 50 patah perkataan dalam BM)",
-        "en": "Brief summary of the article (max 50 words in EN)"
+        "bm": "Ringkasan padat kajian ini (3-4 ayat)",
+        "en": "Concise summary of this study (3-4 sentences)"
       },
-      "objective": {
-        "bm": "Objektif utama kajian (dalam BM)",
-        "en": "Main objective of the study (in EN)"
+      "background": {
+        "bm": "Latar belakang kajian (Background) yang ringkas",
+        "en": "Brief background of the study"
+      },
+      "problemStatement": {
+        "bm": "Penyataan masalah (Problem Statement)",
+        "en": "Problem statement of the study"
       },
       "methodology": {
-        "bm": "Metodologi, instrumen atau reka bentuk kajian yang digunakan (BM)",
-        "en": "Methodology, instruments or research design used (EN)"
+        "bm": "Pendekatan metodologi yang digunakan beserta sampel",
+        "en": "Methodological approach used along with the sample"
       },
       "findings": {
-        "bm": "Dapatan utama/hasil kajian (BM)",
-        "en": "Main findings/results (EN)"
+        "bm": "Dapatan utama kajian (Findings)",
+        "en": "Main findings of the study"
       },
-      "gap": {
-        "bm": "Jurang kajian (research gap) atau cadangan kajian akan datang yang dinyatakan pengarang (BM)",
-        "en": "Research gap or future research recommendations stated by authors (EN)"
+      "futureResearch": {
+        "bm": "Cadangan kajian akan datang (Future Research)",
+        "en": "Future research recommendations"
       },
-      "relevance": {
-        "bm": "Kaitan dan sumbangan artikel ini dengan MAKLUMAT KAJIAN PENGGUNA di atas. Nyatakan dengan spesifik mengapa ia berguna (BM)",
-        "en": "Relevance and contribution of this article to the USER'S RESEARCH INFO above. State specifically why it is useful (EN)"
+      "researchGap": {
+        "bm": "Jurang kajian (Research Gap) utama yang cuba diselesaikan",
+        "en": "Main research gap that the authors attempt to address"
       },
-      "autoPriority": "HIGH / MEDIUM / LOW / REJECT",
-      "rejectReason": "Jika autoPriority adalah REJECT, nyatakan sebab utama mengapa artikel ini TIADA KAITAN LANGSUNG dengan kajian pengguna. Jika tidak, biarkan kosong."
+      "slrRelevance": {
+        "bm": "Bagaimana artikel ini relevan ATAU BOLEH DIGUNAKAN untuk menyokong kajian pengguna.",
+        "en": "How this article is relevant OR CAN BE USED to support the user's research."
+      }
     }
-
-    Panduan autoPriority:
-    - HIGH: Sangat relevan. Merangkumi hampir keseluruhan kata kunci dan tajuk kajian pengguna (Sesuai jadi rujukan utama).
-    - MEDIUM: Sederhana relevan. Berkongsi sebahagian kata kunci (contoh: hanya kaji Kecerdasan Buatan, tetapi bukan Sejarah). Sesuai untuk ulasan literatur (sorotan kajian).
-    - LOW: Kurang relevan. Hanya menyebut kata kunci secara lalu atau kaedah/fokus sangat jauh menyimpang (Boleh digugurkan).
-    - REJECT: Langsung tiada kaitan atau merujuk kepada bidang yang sama sekali berbeza (Wajib buang).
-    `;
+    Pastikan tiada teks lain selain dari objek JSON yang sah.`;
 
     // Process file as base64 document
     const documentPart = {
