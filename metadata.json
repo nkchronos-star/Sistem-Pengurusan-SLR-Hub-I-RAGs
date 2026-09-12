@@ -1,0 +1,6 @@
+{
+  "name": "Sistem Pengurusan SLR",
+  "description": "Sistem automatik untuk mengurus dan memaparkan pangkalan data Systematic Literature Review (SLR) daripada fail CSV.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

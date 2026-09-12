@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "ArticleAnalysis": {
+      "title": "Article Analysis",
+      "description": "Represents an uploaded article's SLR analysis.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "authors": { "type": "string" },
+        "year": { "type": "string" },
+        "doi": { "type": "string" },
+        "journal": { "type": "string" },
+        "isPredatory": { "type": "boolean" },
+        "predatoryWarning": { "type": "string" },
+        "autoPriority": { "type": "string" },
+        "rejectReason": { "type": "string" },
+        "needsReevaluation": { "type": "boolean" },
+        "summary": { "type": "object" },
+        "background": { "type": "object" },
+        "problemStatement": { "type": "object" },
+        "methodology": { "type": "object" },
+        "findings": { "type": "object" },
+        "futureResearch": { "type": "object" },
+        "researchGap": { "type": "object" },
+        "slrRelevance": { "type": "object" },
+        "priority": { "type": "string" },
+        "status": { "type": "string" },
+        "thesisSection": { "type": "string" },
+        "pdfUrl": { "type": "string" }
+      },
+      "required": ["title", "authors", "year", "summary"]
+    },
+    "ResearchProfile": {
+      "title": "Research Profile",
+      "description": "User's research settings.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "keywords": { "type": "string" }
+      },
+      "required": ["title", "keywords"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/articles/{articleId}": {
+      "schema": { "$ref": "#/entities/ArticleAnalysis" },
+      "description": "Articles uploaded and analyzed by the user."
+    },
+    "users/{userId}/profile/settings": {
+      "schema": { "$ref": "#/entities/ResearchProfile" },
+      "description": "Research profile settings for the user."
+    }
+  }
+}
