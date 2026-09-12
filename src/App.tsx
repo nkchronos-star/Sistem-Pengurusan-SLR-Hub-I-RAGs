@@ -9,9 +9,10 @@ import { Dashboard } from './components/Dashboard';
 import { ArticleManager } from './components/ArticleManager';
 import { ReferenceTable } from './components/ReferenceTable';
 import { SettingsPanel } from './components/Settings';
+import { ApaReferences } from './components/ApaReferences';
 import { parseSLRCSV } from './lib/csvParser';
 import { SLRData, ArticleAnalysis, ResearchProfile } from './types';
-import { LayoutDashboard, BookOpen, TableProperties, Settings, AlertTriangle, LogIn, LogOut, Library } from 'lucide-react';
+import { LayoutDashboard, BookOpen, TableProperties, Settings, AlertTriangle, LogIn, LogOut, Library, BookText } from 'lucide-react';
 import { cn } from './lib/utils';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -22,7 +23,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'articles' | 'table' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'articles' | 'table' | 'settings' | 'apa'>('dashboard');
   const [articles, setArticles] = useState<ArticleAnalysis[]>([]);
   const [user, setUser] = useState<User | null>(null);
   
@@ -255,6 +256,18 @@ export default function App() {
                   Jadual Matriks SLR
                 </button>
                 <button
+                  onClick={() => setActiveTab('apa')}
+                  className={cn(
+                    "inline-flex items-center gap-2 px-1 border-b-2 text-sm font-medium transition-colors",
+                    activeTab === 'apa'
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  )}
+                >
+                  <BookText className="w-4 h-4" />
+                  Senarai Rujukan (APA)
+                </button>
+                <button
                   onClick={() => setActiveTab('settings')}
                   className={cn(
                     "inline-flex items-center gap-2 px-1 border-b-2 text-sm font-medium transition-colors",
@@ -275,6 +288,7 @@ export default function App() {
             {activeTab === 'dashboard' && <Dashboard data={data} onReset={handleReset} articles={articles} />}
             {activeTab === 'articles' && <ArticleManager articles={articles} setArticles={setArticles} researchProfile={researchProfile} user={user} />}
             {activeTab === 'table' && <ReferenceTable articles={articles} />}
+            {activeTab === 'apa' && <ApaReferences articles={articles} />}
             {activeTab === 'settings' && <SettingsPanel profile={researchProfile} onSave={handleProfileSave} hasArticles={articles.length > 0} />}
           </div>
         </div>

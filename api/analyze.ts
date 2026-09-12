@@ -39,6 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const userTitle = multerReq.body.title || "Kajian Umum SLR";
     const userKeywords = multerReq.body.keywords || "Tiada konteks khusus";
+    const thesisStructure = multerReq.body.thesisStructure || "Tiada struktur diberikan";
 
     const ai = new GoogleGenAI({ apiKey });
     
@@ -47,17 +48,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     MAKLUMAT KAJIAN PENGGUNA (SANGAT PENTING):
     Tajuk Kajian Pengguna: "${userTitle}"
     Tumpuan (Konstruk/Kata Kunci): "${userKeywords}"
+    Struktur Tesis/Isi Kandungan: "${thesisStructure}"
     
     ARAHAN KESELAMATAN (PREDATORY JOURNALS):
     Semak nama jurnal atau penerbit artikel ini. Jika anda mendapati artikel ini berisiko tinggi diterbitkan dalam jurnal pemangsa (predatory journals) atau penerbit yang diragui (contoh: penerbit yang selalu tersenarai dalam Beall's List tanpa proses peer-review yang sah), anda MESTI menandakan "isPredatory": true dan berikan amaran di bahagian "predatoryWarning". Jika selamat, biarkan false.
 
-    ARAHAN PENILAIAN PRIORITY & REJECT (SANGAT PENTING):
-    Anda MESTI menilai tahap kerelevanan artikel ini dengan "Tumpuan" kajian pengguna di atas.
-    - Jika artikel ini TERANG-TERANGAN TIADA KAITAN langsung (contoh: kajian biologi marin berbanding sejarah), setkan "autoPriority" kepada "REJECT" dan berikan sebab pada "rejectReason".
-    - Jika artikel ini sangat hampir atau tepat dengan konstruk utama kajian pengguna, setkan "autoPriority" kepada "A-TERAS".
-    - Jika artikel ini hanya menyokong sebahagian metodologi, latar belakang, atau konsep umum, setkan "autoPriority" kepada "B-SOKONGAN".
+    ARAHAN PENILAIAN PRIORITY, REJECT & CITATION PLACEMENT (SANGAT PENTING):
+    1. Anda MESTI menilai tahap kerelevanan artikel ini dengan "Tumpuan" kajian pengguna di atas.
+       - Jika artikel ini TERANG-TERANGAN TIADA KAITAN langsung, setkan "autoPriority" kepada "REJECT" dan berikan sebab.
+       - Jika artikel ini sangat hampir atau tepat dengan konstruk utama, setkan "autoPriority" kepada "A-TERAS".
+       - Jika artikel ini hanya menyokong sebahagian metodologi, latar belakang, atau konsep umum, setkan "autoPriority" kepada "B-SOKONGAN".
+    2. Berdasarkan "Struktur Tesis/Isi Kandungan" di atas, cadangkan SATU ATAU DUA bab/seksyen yang paling sesuai untuk artikel ini disitasi (cth: "Bab 2.1: Cabaran Pembelajaran") di dalam "thesisSection". Jika tiada struktur diberikan, buat tekaan bijak seperti "Bab 2: Sorotan Literatur".
+    3. Hasilkan Format Sitasi APA Edisi ke-7 yang lengkap bagi artikel ini di dalam "apaCitation".
 
     PENTING: Anda MESTI memberikan analisis dalam DUA bahasa, iaitu Bahasa Melayu (bm) dan Bahasa Inggeris (en).
+
     Ekstrak maklumat berikut dan pulangkan DALAM FORMAT JSON SAHAJA seperti struktur ini (JANGAN letak markdown \`\`\`json, hanya pulangkan JSON tulen):
     {
       "title": "Tajuk penuh artikel",
@@ -65,10 +70,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "year": "Tahun diterbitkan (contoh: 2023)",
       "doi": "Nombor DOI artikel jika ada (jika tiada, biarkan kosong)",
       "journal": "Nama Jurnal atau Persidangan (jika ada, jika tiada biarkan kosong)",
+      "apaCitation": "Sitasi lengkap dalam format APA Edisi ke-7",
       "isPredatory": false,
       "predatoryWarning": "Berikan amaran ringkas mengapa ia disyaki jurnal pemangsa (jika isPredatory true)",
       "autoPriority": "A-TERAS atau B-SOKONGAN atau REJECT",
       "rejectReason": "Nyatakan sebab artikel ditolak. Biarkan kosong jika tidak ditolak.",
+      "thesisSection": "Cadangan spesifik bab/seksyen mana artikel ini sesuai disitasi (berdasarkan Struktur Tesis pengguna)",
       "summary": {
         "bm": "Ringkasan padat kajian ini (3-4 ayat)",
         "en": "Concise summary of this study (3-4 sentences)"

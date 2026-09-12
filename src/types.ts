@@ -24,6 +24,7 @@ export type ArticleStatus = 'NEW' | 'TO_READ' | 'READING' | 'EXTRACTED' | 'CITED
 export interface ResearchProfile {
   title: string;
   keywords: string;
+  thesisStructure?: string;
 }
 
 export interface ArticleAnalysis {
@@ -49,6 +50,7 @@ export interface ArticleAnalysis {
   priority?: ArticlePriority;
   status?: ArticleStatus;
   thesisSection?: string;
+  apaCitation?: string;
   pdfUrl?: string;
 }
 

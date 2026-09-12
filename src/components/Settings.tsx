@@ -74,6 +74,20 @@ export function SettingsPanel({ profile, onSave, hasArticles }: SettingsPanelPro
               </p>
             </div>
 
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Struktur Bab / Isi Kandungan (Pilihan)</label>
+              <textarea 
+                rows={5}
+                value={localProfile.thesisStructure || ""}
+                onChange={(e) => setLocalProfile({ ...localProfile, thesisStructure: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Contoh:&#10;Bab 1: Pengenalan AI dalam Sejarah&#10;Bab 2.1: Cabaran Pembelajaran&#10;Bab 2.2: Kerangka Konseptual&#10;Bab 3: Metodologi Kuantitatif..."
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                *Masukkan struktur tesis anda. AI akan membaca struktur ini dan mencadangkan (Citation Placement) di mana artikel tersebut patut diletakkan.
+              </p>
+            </div>
+
             <div className="pt-4 flex justify-end">
               <button
                 onClick={handleSave}

@@ -20,6 +20,22 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
   const [lang, setLang] = useState<'bm' | 'en'>('bm');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  React.useEffect(() => {
+    // Reset to page 1 when new items are added, or if current page is out of bounds
+    if (currentPage > Math.ceil(articles.length / itemsPerPage)) {
+      setCurrentPage(Math.max(1, Math.ceil(articles.length / itemsPerPage)));
+    }
+  }, [articles.length, currentPage]);
+
+  const totalPages = Math.ceil(articles.length / itemsPerPage);
+  const currentItems = articles.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -47,6 +63,7 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
     formData.append("file", file);
     formData.append("title", researchProfile.title);
     formData.append("keywords", researchProfile.keywords);
+    formData.append("thesisStructure", researchProfile.thesisStructure || "");
     const fileUrl = URL.createObjectURL(file); // Generate URL for the PDF
 
     try {
@@ -175,9 +192,9 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 flex flex-col min-h-0">
             {articles.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+              <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto p-6">
                 <div className="bg-blue-50 p-4 rounded-full mb-4">
                   <FileText className="w-8 h-8 text-blue-500" />
                 </div>
@@ -191,8 +208,8 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {articles.map((article) => (
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {currentItems.map((article) => (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -204,21 +221,68 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
                     )}
                   >
                     <div className="flex items-start justify-between">
-                      <div className="pr-4">
-                        <h4 className="font-semibold text-gray-900 line-clamp-2 mb-1">{article.title || (lang === 'bm' ? 'Tiada Tajuk' : 'No Title')}</h4>
-                        <p className="text-sm text-gray-500 line-clamp-1">{article.authors} ({article.year})</p>
-                        <div className="mt-3 flex gap-2 flex-wrap">
-                          {article.methodology && (
-                            <span className="inline-flex px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded max-w-full truncate">
-                              {renderText(article.methodology)}
-                            </span>
-                          )}
-                        </div>
+                      <div className="pr-4 min-w-0 flex-1">
+                        <h4 className="font-semibold text-gray-900 leading-tight mb-1">{article.title || (lang === 'bm' ? 'Tiada Tajuk' : 'No Title')}</h4>
+                        <p className="text-sm text-gray-500 mb-3">{article.authors} ({article.year})</p>
+                        {article.methodology && (
+                          <div className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded p-2 line-clamp-2">
+                            {renderText(article.methodology)}
+                          </div>
+                        )}
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400 mt-1 shrink-0" />
                     </div>
                   </motion.div>
                 ))}
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="border-t border-gray-200 bg-white px-6 py-4 flex items-center justify-between shrink-0">
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="font-semibold text-gray-900">{Math.min(currentPage * itemsPerPage, articles.length)}</span> / <span className="font-semibold text-gray-900">{articles.length}</span>
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5 rotate-180" />
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }).map((_, i) => {
+                      // Simple logic to not show too many pages, but good enough for typical SLR (e.g. 50 articles = 10 pages)
+                      if (totalPages > 5 && i > 0 && i < totalPages - 1 && Math.abs(currentPage - 1 - i) > 1) {
+                         if (i === 1 && currentPage > 3) return <span key={i} className="text-gray-400 px-1">...</span>;
+                         if (i === totalPages - 2 && currentPage < totalPages - 2) return <span key={i} className="text-gray-400 px-1">...</span>;
+                         return null;
+                      }
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPage(i + 1)}
+                          className={cn(
+                            "w-8 h-8 flex items-center justify-center rounded text-sm font-semibold transition-colors",
+                            currentPage === i + 1 
+                              ? "bg-blue-600 text-white shadow-sm" 
+                              : "text-gray-600 hover:bg-gray-200"
+                          )}
+                        >
+                          {i + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
