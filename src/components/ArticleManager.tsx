@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ArticleAnalysis, BilingualText, ResearchProfile } from "../types";
 import { UploadCloud, FileText, Search, Library, AlertCircle, X, ChevronRight, Languages, AlertTriangle } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -23,7 +23,42 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  React.useEffect(() => {
+  const [panelWidth, setPanelWidth] = useState(600);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (!isDragging) {
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+      return;
+    }
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 400 && newWidth < window.innerWidth - 300) {
+        setPanelWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
+  useEffect(() => {
     // Reset to page 1 when new items are added, or if current page is out of bounds
     if (currentPage > Math.ceil(articles.length / itemsPerPage)) {
       setCurrentPage(Math.max(1, Math.ceil(articles.length / itemsPerPage)));
@@ -293,11 +328,22 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
           {selectedArticle ? (
             <motion.div 
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "50%", opacity: 1 }}
+              animate={{ width: panelWidth, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="border-l border-gray-200 bg-white overflow-hidden flex flex-col min-w-[400px]"
+              transition={{ type: "spring", bounce: 0, duration: isDragging ? 0 : 0.3 }}
+              className="border-l border-gray-200 bg-white overflow-hidden flex flex-col relative"
+              style={{ minWidth: 400 }}
             >
-              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+              {/* Drag Handle */}
+              <div 
+                className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-blue-500 active:bg-blue-600 z-50 transition-colors"
+                style={{ marginLeft: '-1px' }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+              />
+              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
                 <div className="flex items-center gap-4">
                   <h3 className="font-bold text-gray-700 text-sm">
                     {lang === 'bm' ? 'Butiran Analisis' : 'Analysis Details'}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArticleAnalysis, BilingualText } from "../types";
-import { Table, Search, ExternalLink, Download, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Table, Search, ExternalLink, Download, AlertCircle, ChevronLeft, ChevronRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import Papa from "papaparse";
 
@@ -34,6 +34,93 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const [isCopiedPrompt, setIsCopiedPrompt] = useState(false);
+  const [promptType, setPromptType] = useState('bab2');
+
+  const handleCopyPrompt = () => {
+    if (filteredArticles.length === 0) return;
+
+    let promptText = "";
+
+    if (promptType === 'bab1') {
+      promptText = `Bertindak sebagai pakar akademik dan penilai tesis (Examiner). Sila bantu saya menulis bahagian Latar Belakang dan Penyataan Masalah (Bab 1) yang kukuh untuk menyokong keperluan dan rasional kajian saya, berdasarkan ${filteredArticles.length} artikel di bawah. 
+
+Fokuskan penulisan anda kepada:
+1. Jurang / Lompang kajian (research gap) yang ditinggalkan oleh kajian-kajian lepas.
+2. Isu atau masalah utama yang belum diselesaikan secara tuntas.
+3. Mengapa kajian baharu (kajian saya) sangat kritikal untuk dijalankan.
+
+Gunakan penanda wacana akademik kelas pertama. Sila tulis dalam Bahasa Melayu.
+
+MAKLUMAT ARTIKEL:
+${filteredArticles.map((a, i) => `
+[Artikel ${i + 1}]
+Tajuk: ${a.title}
+Penulis: ${a.authors} (${a.year})
+Penyataan Masalah: ${renderText(a.problemStatement) || 'Tidak dinyatakan'}
+Lompang Kajian: ${renderText(a.researchGap)}
+`).join('\n')}`;
+    } else if (promptType === 'bab2') {
+      promptText = `Bertindak sebagai pakar akademik dan penilai tesis (Examiner). Sila bantu saya menulis ulasan literatur (Literature Review) yang kritis dan analitikal dengan mensintesiskan ${filteredArticles.length} artikel di bawah. 
+
+Jangan senaraikan artikel ini satu per satu (seperti senarai rujukan), tetapi gabungkan dapatan mereka ke dalam perenggan berstruktur mengikut:
+1. Tema utama atau persamaan.
+2. Percanggahan pendapat atau kaedah.
+3. Lompang kajian (research gap) yang ditinggalkan oleh mereka.
+
+Gunakan penanda wacana akademik kelas pertama. Sila tulis dalam Bahasa Melayu.
+
+MAKLUMAT ARTIKEL:
+${filteredArticles.map((a, i) => `
+[Artikel ${i + 1}]
+Tajuk: ${a.title}
+Penulis: ${a.authors} (${a.year})
+Metodologi: ${renderText(a.methodology)}
+Dapatan: ${renderText(a.findings)}
+Lompang Kajian: ${renderText(a.researchGap)}
+`).join('\n')}`;
+    } else if (promptType === 'bab3') {
+      promptText = `Bertindak sebagai pakar akademik. Sila bantu saya mensintesiskan bahagian Metodologi (Bab 3) dengan merumuskan kaedah yang digunakan oleh ${filteredArticles.length} kajian lepas di bawah bagi menyokong atau menjustifikasikan pemilihan kaedah kajian saya.
+
+Fokuskan penulisan kepada:
+1. Trend reka bentuk kajian (contoh: kualitatif, kuantitatif, eksperimen) yang biasa digunakan.
+2. Kekuatan atau kelemahan pendekatan metodologi lepas.
+3. Instrumen atau saiz sampel yang sering diguna pakai.
+
+Gunakan penanda wacana akademik kelas pertama. Sila tulis dalam Bahasa Melayu.
+
+MAKLUMAT ARTIKEL:
+${filteredArticles.map((a, i) => `
+[Artikel ${i + 1}]
+Tajuk: ${a.title}
+Penulis: ${a.authors} (${a.year})
+Metodologi: ${renderText(a.methodology)}
+`).join('\n')}`;
+    } else if (promptType === 'bab5') {
+      promptText = `Bertindak sebagai pakar akademik. Sila bantu saya mensintesiskan bahagian Perbincangan dan Cadangan (Bab 5) dengan merumuskan ${filteredArticles.length} artikel di bawah.
+
+Bantu saya menyusun isi supaya saya boleh membandingkan (menyokong atau menolak) dapatan kajian saya nanti dengan dapatan lepas ini, dan menyenaraikan cadangan kajian lanjutan.
+Fokuskan kepada:
+1. Konklusi utama / dapatan besar.
+2. Cadangan kajian masa depan (future research) yang dikemukakan oleh mereka.
+
+Gunakan penanda wacana akademik kelas pertama. Sila tulis dalam Bahasa Melayu.
+
+MAKLUMAT ARTIKEL:
+${filteredArticles.map((a, i) => `
+[Artikel ${i + 1}]
+Tajuk: ${a.title}
+Penulis: ${a.authors} (${a.year})
+Dapatan: ${renderText(a.findings)}
+Cadangan Kajian Akan Datang: ${renderText(a.futureResearch) || 'Tidak dinyatakan'}
+`).join('\n')}`;
+    }
+
+    navigator.clipboard.writeText(promptText);
+    setIsCopiedPrompt(true);
+    setTimeout(() => setIsCopiedPrompt(false), 3000);
+  };
 
   const handleExportCSV = () => {
     const exportData = filteredArticles.map((a, i) => ({
@@ -96,6 +183,35 @@ export function ReferenceTable({ articles }: ReferenceTableProps) {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
               />
+            </div>
+            
+            {/* Export Prompt */}
+            <div className="flex items-center gap-2">
+              <select 
+                value={promptType} 
+                onChange={(e) => setPromptType(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-2 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              >
+                <option value="bab1">Bab 1 (Penyataan Masalah)</option>
+                <option value="bab2">Bab 2 (Sorotan Literatur)</option>
+                <option value="bab3">Bab 3 (Metodologi)</option>
+                <option value="bab5">Bab 5 (Perbincangan)</option>
+              </select>
+              <button
+                onClick={handleCopyPrompt}
+                disabled={filteredArticles.length === 0}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm border",
+                  filteredArticles.length === 0 
+                    ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed" 
+                    : isCopiedPrompt
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                )}
+              >
+                {isCopiedPrompt ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Sparkles className="w-4 h-4" />}
+                {isCopiedPrompt ? (lang === 'bm' ? 'Prompt Disalin!' : 'Prompt Copied!') : (lang === 'bm' ? 'Jana Prompt AI' : 'Generate AI Prompt')}
+              </button>
             </div>
             
             {/* Export CSV */}
