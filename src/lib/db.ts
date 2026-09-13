@@ -8,7 +8,11 @@ export const subscribeToArticles = (userId: string, callback: (articles: Article
   const q = query(collection(db, "users", userId, "articles"));
   return onSnapshot(q, (snapshot) => {
     const articles = snapshot.docs.map(doc => doc.data() as ArticleAnalysis);
-    callback(articles.sort((a, b) => b.year.localeCompare(a.year)));
+    callback(articles.sort((a, b) => {
+      const yearA = String(a.year || "");
+      const yearB = String(b.year || "");
+      return yearB.localeCompare(yearA);
+    }));
   });
 };
 
