@@ -24,8 +24,8 @@ export function FileUpload({ onFileUpload }: FileUploadProps) {
       e.preventDefault();
       setIsDragging(false);
       
-      const files = Array.from(e.dataTransfer.files);
-      const csvFile = files.find((f) => f.name.endsWith(".csv"));
+      const files = Array.from(e.dataTransfer.files) as File[];
+      const csvFile = files.find((f: File) => f.name.endsWith(".csv"));
       
       if (csvFile) {
         onFileUpload(csvFile);

@@ -9,8 +9,17 @@ export const subscribeToArticles = (userId: string, callback: (articles: Article
   return onSnapshot(q, (snapshot) => {
     const articles = snapshot.docs.map(doc => doc.data() as ArticleAnalysis);
     callback(articles.sort((a, b) => {
-      const yearA = String(a.year || "");
-      const yearB = String(b.year || "");
+      // Ensure we have strings and handle missing values
+      const yearA = (a.year || "").toString();
+      const yearB = (b.year || "").toString();
+      
+      // If both are empty, maintain order
+      if (!yearA && !yearB) return 0;
+      // If A is empty but B has a year, B comes first
+      if (!yearA) return 1;
+      // If B is empty but A has a year, A comes first
+      if (!yearB) return -1;
+
       return yearB.localeCompare(yearA);
     }));
   });

@@ -115,6 +115,13 @@ export function ArticleManager({ articles, setArticles, researchProfile, user }:
       } else {
         const textResponse = await response.text();
         console.error("Non-JSON response from server:", textResponse);
+        
+        if (textResponse.includes("Cookie check") || textResponse.includes("Action required to load your app")) {
+           throw new Error(lang === 'bm' 
+            ? "Sesi tamat atau dihalang oleh semakan keselamatan (Cookie check). Sila MUAT SEMULA (Refresh) halaman ini."
+            : "Session expired or blocked by security check. Please REFRESH the page.");
+        }
+
         throw new Error(lang === 'bm' 
           ? "Ralat pelayan: Pelayan mungkin sedang dimulakan semula atau mengalami kesesakan. Sila cuba sebentar lagi." 
           : "Server error: The server might be restarting or overloaded. Please try again in a moment.");
